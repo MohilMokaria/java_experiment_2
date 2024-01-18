@@ -21,14 +21,17 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+        // Retrieve database connection parameters from servlet context
         String jdbcUri = getServletContext().getInitParameter("jdbcUri");
         String dbUri = getServletContext().getInitParameter("dbUri");
         String dbId = getServletContext().getInitParameter("dbId");
         String dbPass = getServletContext().getInitParameter("dbPass");
 
+        // Set the response content type
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
 
+        // Retrieve user input from the registration form
         String name = request.getParameter("name");
         String gender = request.getParameter("gender");
         String address = request.getParameter("address");
@@ -36,17 +39,25 @@ public class RegisterServlet extends HttpServlet {
         String city = request.getParameter("city");
 
         try {
+            // Load the JDBC driver class
             Class.forName(jdbcUri);
+
+            // Establish a database connection
             try (Connection con = DriverManager.getConnection(dbUri, dbId, dbPass)) {
+                // Create a prepared statement for inserting data into the database
                 PreparedStatement ps = con.prepareStatement("INSERT INTO regtbl(name, gender, age, address, city) VALUES(?,?,?,?,?)");
 
+                // Set parameters for the prepared statement
                 ps.setString(1, name);
                 ps.setString(2, gender);
                 ps.setInt(3, age);
                 ps.setString(4, address);
                 ps.setString(5, city);
 
+                // Execute the update query
                 int i = ps.executeUpdate();
+
+                // Check the result of the update query and display appropriate message
                 if (i > 0) {
                     out.println("User Inserted Successfully");
                 } else {
@@ -55,6 +66,7 @@ public class RegisterServlet extends HttpServlet {
             }
 
         } catch (SQLException | ClassNotFoundException ex) {
+            // Log any exceptions that occur during the database operation
             Logger.getLogger(RegisterServlet.class.getName()).log(Level.SEVERE, null, ex);
             out.println("Error: " + ex.getMessage());
         }

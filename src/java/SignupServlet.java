@@ -22,40 +22,52 @@ public class SignupServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+        // Retrieve database connection parameters from servlet context
         String jdbcUri = getServletContext().getInitParameter("jdbcUri");
         String dbUri = getServletContext().getInitParameter("dbUri");
         String dbId = getServletContext().getInitParameter("dbId");
         String dbPass = getServletContext().getInitParameter("dbPass");
 
+        // Set the response content type
         response.setContentType("text/html");
         PrintWriter pw = response.getWriter();
 
+        // Retrieve user input from the registration form
         String email = request.getParameter("mail");
         String pass1 = request.getParameter("pass1");
 
         try {
+            // Load the JDBC driver class
             Class.forName(jdbcUri);
 
+            // Establish a database connection
             try (Connection con = DriverManager.getConnection(dbUri, dbId, dbPass)) {
+                // Check if the email already exists in the login table
                 PreparedStatement ps1 = con.prepareStatement("SELECT * FROM login WHERE mail=?");
                 ps1.setString(1, email);
 
                 ResultSet rs = ps1.executeQuery();
 
+                // If the email already exists, display an error message
                 if (rs.next()) {
                     pw.println("<h1>User already registered with " + email + "</h1>");
                     pw.println("<br><a href=\"./index.jsp\">Try Again with new email</a>");
                     pw.println("<br><br><a href=\"./login.jsp\">Login to existing account</a>");
                 } else {
+                    // If the email does not exist, insert a new record into the login table
                     PreparedStatement ps2 = con.prepareStatement("INSERT INTO login(mail, pass) values(?,?)");
                     ps2.setString(1, email);
                     ps2.setString(2, pass1);
 
+                    // Execute the update query
                     int i = ps2.executeUpdate();
+
+                    // Redirect to the login page after successful registration
                     response.sendRedirect("./login.jsp");
                 }
             }
         } catch (SQLException | ClassNotFoundException ex) {
+            // Log any exceptions that occur during the database operation
             Logger.getLogger(SignupServlet.class.getName()).log(Level.SEVERE, null, ex);
             pw.println("Error: " + ex.getMessage());
         }
